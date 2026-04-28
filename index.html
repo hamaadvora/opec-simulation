@@ -80,7 +80,7 @@ let API_KEY="";
 
 async function callAPI(prompt){
   try{
-    const url="https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key="+API_KEY;
+    const url="https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-8b:generateContent?key="+API_KEY;
     const body={
       system_instruction:{parts:[{text:SYS}]},
       contents:[{role:"user",parts:[{text:prompt}]}],
@@ -269,7 +269,7 @@ function App(){
           h("p",{style:{fontSize:12,color:"#8a7f70",lineHeight:1.7,marginBottom:16}},"This simulation uses Gemini to dynamically generate every scenario, reaction, and consequence. Enter your Google AI API key to begin. Your key is stored only in memory and never sent anywhere except the Google AI API."),
           h("input",{type:"password",placeholder:"AIzaSy...",value:keyInput,onChange:e=>setKeyInput(e.target.value),onKeyDown:e=>{if(e.key==="Enter")submitKey()},style:{width:"100%",padding:"12px 14px",background:"#0c0a08",border:"1px solid #2a2520",borderRadius:8,color:"#e0d5c5",fontFamily:"'JetBrains Mono',monospace",fontSize:12,outline:"none",marginBottom:12}}),
           h("button",{onClick:submitKey,style:{width:"100%",padding:12,background:keyInput.length>10?"#c9a84c":"#2a2520",color:keyInput.length>10?"#0c0a08":"#5a5040",border:"none",borderRadius:8,fontFamily:"'JetBrains Mono',monospace",fontSize:12,fontWeight:600,cursor:keyInput.length>10?"pointer":"default",letterSpacing:1}},"Connect & Begin"),
-          h("p",{style:{fontSize:10,color:"#5a5040",marginTop:10,lineHeight:1.5}},"Get a key at aistudio.google.com. Uses gemini-2.0-flash. Very low cost per full playthrough.")
+          h("p",{style:{fontSize:10,color:"#5a5040",marginTop:10,lineHeight:1.5}},"Get a key at aistudio.google.com. Uses gemini-1.5-flash-8b. Very low cost per full playthrough.")
         )
       )
     );
