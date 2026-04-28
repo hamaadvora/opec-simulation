@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>THE OPEC CRISIS</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;900&family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:#0c0a08;color:#e0d5c5;font-family:'Georgia',serif;min-height:100vh}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:#0c0a08}::-webkit-scrollbar-thumb{background:#2a2520;border-radius:3px}
+@keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes glow{0%,100%{box-shadow:0 0 8px #c9a84c20}50%{box-shadow:0 0 24px #c9a84c40}}
+@keyframes dotPulse{0%,80%,100%{opacity:.3}40%{opacity:1}}
+@keyframes tickerScroll{0%{transform:translateX(100%)}100%{transform:translateX(-250%)}}
+#app{max-width:760px;margin:0 auto}</style></head><body><div id="app"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+<script type="text/babel">
+const {useState,useEffect,useRef}=React;
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const fmt=(n,d=1)=>n.toFixed(d);
+
+const LEADERS={
+uae:{name:"Sheikh Mohammed bin Zayed",title:"President of the UAE",flag:"🇦🇪"},
+saudi:{name:"Mohammed bin Salman",title:"Crown Prince of Saudi Arabia",flag:"🇸🇦"},
+usa:{name:"Donald Trump",title:"President of the United States",flag:"🇺🇸"},
+iran:{name:"Masoud Pezeshkian",title:"President of Iran",flag:"🇮🇷"},
+russia:{name:"Vladimir Putin",title:"President of Russia",flag:"🇷🇺"},
+china:{name:"Xi Jinping",title:"President of China",flag:"🇨🇳"},
+opec:{name:"Haitham Al Ghais",title:"OPEC Secretary General",flag:"🛢️"},
+india:{name:"Narendra Modi",title:"Prime Minister of India",flag:"🇮🇳"},
+uk:{name:"Keir Starmer",title:"Prime Minister of the UK",flag:"🇬🇧"},
+kazakhstan:{name:"Kassym-Jomart Tokayev",title:"President of Kazakhstan",flag:"🇰🇿"},
+turkey:{name:"Recep Tayyip Erdoğan",title:"President of Turkey",flag:"🇹🇷"},
+france:{name:"Emmanuel Macron",title:"President of France",flag:"🇫🇷"},
+japan:{name:"Shigeru Ishiba",title:"Prime Minister of Japan",flag:"🇯🇵"},
+iraq:{name:"Mohammed Shia al-Sudani",title:"Prime Minister of Iraq",flag:"🇮🇶"},
+yemen_houthi:{name:"Abdul Malik al-Houthi",title:"Houthi Movement Leader",flag:"🇾🇪"},
+israel:{name:"Benjamin Netanyahu",title:"Prime Minister of Israel",flag:"🇮🇱"},
+};
+const FORMATS={
+truth_social:{label:"Truth Social",bg:"#1a1428",border:"#5535aa",icon:"📱"},
+official:{label:"Official Statement",bg:"#141a18",border:"#2a4a3a",icon:"📜"},
+press_release:{label:"Press Release",bg:"#1a1815",border:"#4a3a2a",icon:"📰"},
+press_conference:{label:"Press Conference",bg:"#151820",border:"#2a3a5a",icon:"🎤"},
+state_media:{label:"State Media",bg:"#1a1414",border:"#5a2a2a",icon:"📺"},
+saudi_press:{label:"Saudi Press Agency",bg:"#141a14",border:"#2a5a2a",icon:"🏛️"},
+reuters_source:{label:"Reuters — Sources",bg:"#181818",border:"#4a4a4a",icon:"🔒"},
+xinhua:{label:"Xinhua",bg:"#1a1418",border:"#5a2a3a",icon:"🇨🇳"},
+wam:{label:"WAM — UAE News",bg:"#121820",border:"#2a4a6a",icon:"🇦🇪"},
+joint:{label:"Joint Statement",bg:"#181a14",border:"#3a4a2a",icon:"🤝"},
+telegram:{label:"Telegram Channel",bg:"#16181e",border:"#2a3a5a",icon:"✈️"},
+al_jazeera:{label:"Al Jazeera",bg:"#18140e",border:"#4a3a1a",icon:"📡"},
+};
+const TONES={positive:"#4aad6a",warm:"#4aad6a",supportive:"#4aad6a",neutral:"#8a8a8a",cautious:"#8a8a8a",mixed:"#ca8a3a",cold:"#6a8aaa",tense:"#6a8aaa",warning:"#ca8a3a",hostile:"#d45a5a",threatening:"#d45a5a",resolved:"#5a9ece",concerned:"#ca8a3a",calculating:"#6a8aaa",sardonic:"#ca8a3a",conciliatory:"#4aad6a",smug:"#6a8aaa",dismissive:"#6a8aaa",furious:"#d45a5a",alarmed:"#ca8a3a",defiant:"#d45a5a",triumphant:"#c9a84c",pragmatic:"#8a8a8a",pleased:"#4aad6a",defensive:"#ca8a3a"};
+
+const INIT={turn:0,phase:"key",price:78,uaeProduction:3.2,uaeCapacity:4.8,uaeInOpec:true,hormuzDisruption:0,warActive:false,saudiRelation:65,usRelation:70,iranThreat:30,opecCohesion:75,publicApproval:72,investorConf:70,chinaRelation:55,indiaRelation:65,yemenInfluence:40,gccUnity:60,militaryReadiness:65,fujairahStarted:false,fujairahProgress:0,kazExit:false,history:[],reactions:[],events:[],tickerItems:[]};
+const MONTHS=["January 2026","February 2026","March 2026","Late March 2026","April 2026 (Week 1)","April 2026 (Week 2)","April 2026 (Week 3)","April 28, 2026","May 2026","June 2026","July 2026","September 2026","December 2026"];
+const getMonth=t=>MONTHS[t]||"Turn "+(t+1);
+const MAX_TURNS=13;
+
+const SYS=`You are the game master for a geopolitical simulation. The player is MBZ, President of the UAE, navigating the 2026 OPEC crisis and Iran war.
+
+CRITICAL RULES:
+- Consequences should be SURPRISING but logical — second and third-order effects
+- Leaders respond IN CHARACTER:
+  * Trump: bombastic Truth Social, transactional, ALL CAPS emphasis, exclamation marks
+  * MBS: cold, calculated, anonymous Reuters/Bloomberg sources only
+  * Putin: chess-player, formal, menacing
+  * Xi: Xinhua formal, mutual benefit, sovereignty
+  * Iran: revolutionary rhetoric, resistance axis
+  * Modi: partnership, 1.4B people
+- Include UNEXPECTED actors and consequences
+- Model FULL SPECTRUM: oil, military, Yemen, Gulf rivalries, tech, currency, climate, domestic politics
+- Good decisions sometimes backfire. Allies sometimes betray.
+- Some reactions reveal HIDDEN consequences
+
+ALWAYS respond with ONLY valid JSON. No markdown fences, no preamble, no explanation outside the JSON.`;
+
+let API_KEY="";
+
+async function callAPI(prompt){
+  try{
+    const url="https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key="+API_KEY;
+    const body={
+      system_instruction:{parts:[{text:SYS}]},
+      contents:[{role:"user",parts:[{text:prompt}]}],
+      generationConfig:{maxOutputTokens:4000,temperature:1.0}
+    };
+    const res=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+    if(!res.ok){
+      const err=await res.text();
+      throw new Error("Gemini "+res.status+": "+err);
+    }
+    const data=await res.json();
+    const text=((data.candidates||[])[0]?.content?.parts||[]).map(p=>p.text||"").join("");
+    if(!text) throw new Error("Empty response");
+    const clean=text.replace(/^```json\s*/,"").replace(/```\s*$/,"").trim();
+    return JSON.parse(clean);
+  }catch(e){console.error("API fail:",e);throw e;}
+}
+
+function stStr(s){
+  return "Oil: $"+fmt(s.price,0)+", UAE prod: "+fmt(s.uaeProduction)+"M, OPEC: "+(s.uaeInOpec?"in":"OUT")+", War: "+s.warActive+", Hormuz: "+(s.hormuzDisruption*100).toFixed(0)+"%, Fujairah: "+(s.fujairahStarted?s.fujairahProgress+"%":"no")+", Saudi: "+Math.round(s.saudiRelation)+", US: "+Math.round(s.usRelation)+", Iran: "+Math.round(s.iranThreat)+", OPEC coh: "+Math.round(s.opecCohesion)+", Approval: "+Math.round(s.publicApproval)+", Investor: "+Math.round(s.investorConf)+", China: "+Math.round(s.chinaRelation)+", India: "+Math.round(s.indiaRelation)+", Yemen: "+Math.round(s.yemenInfluence)+", GCC: "+Math.round(s.gccUnity)+", Military: "+Math.round(s.militaryReadiness)+", Kaz: "+s.kazExit;
+}
+
+async function genTurn(s){
+  const hist=s.history.map(h=>h.month+": "+h.choice).join("\n")||"None yet";
+  return await callAPI("Generate turn "+(s.turn+1)+' for "'+getMonth(s.turn)+'".\n\nSTATE: '+stStr(s)+'\nHISTORY:\n'+hist+'\n\nReturn JSON:\n{"headline":"dramatic headline","briefing":"2-3 paragraphs referencing prior decisions with surprises","intel":"1-2 paragraphs classified intel with specifics","choices":[{"id":"x","label":"Short label","icon":"emoji","desc":"Description","tags":[{"text":"Impact","type":"green|red|yellow|blue"}],"effects":{"price":0,"uaeProduction":0,"hormuzDisruption":0,"saudiRelation":0,"usRelation":0,"iranThreat":0,"opecCohesion":0,"publicApproval":0,"investorConf":0,"chinaRelation":0,"indiaRelation":0,"yemenInfluence":0,"gccUnity":0,"militaryReadiness":0}}],"tickerItems":[{"text":"headline","color":"#hex"}],"events":[{"text":"event","type":"bad|good|neutral"}]}\n\n3-4 choices with GENUINE tradeoffs. One hidden downside. Effects are deltas (-20 to +20). 3-5 ticker items, 1-3 events. Dramatically different based on history.');
+}
+
+async function genReactions(s,label,desc){
+  const hist=s.history.map(h=>h.month+": "+h.choice).join("\n");
+  return await callAPI('UAE decided: "'+label+'" — '+desc+'\n\nSTATE: '+stStr(s)+'\nHISTORY:\n'+hist+'\n\nGenerate 4-7 leader reactions. Leaders: uae,saudi,usa,iran,russia,china,opec,india,uk,kazakhstan,turkey,france,japan,iraq,yemen_houthi,israel\nFormats: truth_social,official,press_release,press_conference,state_media,saudi_press,reuters_source,xinhua,wam,joint,telegram,al_jazeera\n\nInclude at least one SURPRISING reaction. Return JSON array:\n[{"leader":"id","text":"in-character quote","tone":"tone","format":"format"}]');
+}
+
+async function genEnding(s){
+  const hist=s.history.map(h=>h.month+": "+h.choice).join("\n");
+  return await callAPI('Simulation complete.\nSTATE: '+stStr(s)+'\nDECISIONS:\n'+hist+'\n\nReturn JSON:\n{"narrative":"3-4 paragraph historian summary. Specific consequences. Successes AND failures.","legacy_title":"Evocative title","verdict":"One sentence verdict."}');
+}
+
+// Components
+function SBar({label,value,prev,color}){
+  const w=clamp(value,0,100);
+  const d=prev!==undefined?Math.round(value-prev):0;
+  const isNeg=label.includes("Threat");
+  return React.createElement("div",{style:{display:"flex",alignItems:"center",gap:6,marginBottom:7,height:22}},
+    React.createElement("span",{style:{fontSize:9.5,color:"#8a8070",fontFamily:"'JetBrains Mono',monospace",width:130,flexShrink:0,whiteSpace:"nowrap",overflow:"hidden"}},label),
+    React.createElement("div",{style:{flex:1,height:10,background:"#1a1610",borderRadius:5,overflow:"hidden",position:"relative"}},
+      React.createElement("div",{style:{position:"absolute",left:0,top:0,height:"100%",borderRadius:5,width:w+"%",background:"linear-gradient(90deg,"+color+"88,"+color+")",transition:"width 1s cubic-bezier(.25,.46,.45,.94)"}})
+    ),
+    React.createElement("span",{style:{fontSize:11,fontFamily:"'JetBrains Mono',monospace",width:28,textAlign:"right",fontWeight:600,color:color,flexShrink:0}},Math.round(value)),
+    React.createElement("span",{style:{fontSize:9,fontFamily:"'JetBrains Mono',monospace",width:32,flexShrink:0,color:d===0?"transparent":d>0?(isNeg?"#d45a5a":"#4aad6a"):(isNeg?"#4aad6a":"#d45a5a")}},d!==0?((d>0?"+":"")+d):"")
+  );
+}
+
+function RxCard({r,i}){
+  const ld=LEADERS[r.leader]||{name:r.leader||"Unknown",title:"",flag:"🌍"};
+  const fs=FORMATS[r.format]||FORMATS.official;
+  const tc=TONES[r.tone]||"#8a8a8a";
+  return React.createElement("div",{style:{background:fs.bg,border:"1px solid "+fs.border,borderRadius:12,padding:"14px 16px",marginBottom:10,position:"relative",overflow:"hidden",animation:"slideUp .5s ease "+i*.15+"s both"}},
+    React.createElement("div",{style:{position:"absolute",top:0,left:0,width:3,height:"100%",background:tc}}),
+    React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8,flexWrap:"wrap",gap:6}},
+      React.createElement("div",{style:{display:"flex",alignItems:"center",gap:8}},
+        React.createElement("span",{style:{fontSize:20}},ld.flag),
+        React.createElement("div",null,
+          React.createElement("div",{style:{fontSize:12,fontWeight:700,color:"#e0d5c5"}},ld.name),
+          React.createElement("div",{style:{fontSize:8,color:"#6a5f50",fontFamily:"'JetBrains Mono',monospace"}},ld.title)
+        )
+      ),
+      React.createElement("div",{style:{fontSize:7,color:"#6a5f50",fontFamily:"'JetBrains Mono',monospace",background:"#0a0a0a",padding:"3px 8px",borderRadius:4,display:"flex",alignItems:"center",gap:4}},
+        React.createElement("span",null,fs.icon),React.createElement("span",null,fs.label)
+      )
+    ),
+    React.createElement("p",{style:{fontSize:13,color:"#c5b8a5",lineHeight:1.7,fontStyle:r.format==="reuters_source"?"italic":"normal"}},'"'+r.text+'"'),
+    React.createElement("div",{style:{marginTop:6,fontSize:8,fontFamily:"'JetBrains Mono',monospace",textTransform:"uppercase",letterSpacing:1,color:tc}},"● "+r.tone)
+  );
+}
+
+function GulfMap({state}){
+  const hc=state.hormuzDisruption>.5?"#d45a5a":state.hormuzDisruption>.1?"#ca8a3a":"#4aad6a";
+  return React.createElement("svg",{viewBox:"0 0 400 220",style:{width:"100%",height:"auto",opacity:.9}},
+    React.createElement("rect",{x:0,y:0,width:400,height:220,fill:"#0a0e14",rx:8}),
+    React.createElement("path",{d:"M100,80 Q200,60 300,90 Q350,110 320,150 Q280,180 200,170 Q140,160 120,130 Z",fill:"#0d1218",stroke:"#1a2535",strokeWidth:.5}),
+    React.createElement("path",{d:"M50,20 L180,25 L200,60 L160,80 L100,75 Z",fill:"#1a1810",stroke:"#2a2520",strokeWidth:.5}),
+    React.createElement("text",{x:120,y:52,textAnchor:"middle",fill:"#8a8070",fontSize:8,fontFamily:"'JetBrains Mono',monospace"},"IRAQ"),
+    React.createElement("path",{d:"M200,60 L300,40 L350,80 L320,100 L280,90 L200,80 Z",fill:"#1a1214",stroke:"#2a2020",strokeWidth:.5}),
+    React.createElement("text",{x:275,y:68,textAnchor:"middle",fill:state.warActive?"#d45a5a":"#8a8070",fontSize:8,fontFamily:"'JetBrains Mono',monospace"},"IRAN"),
+    React.createElement("path",{d:"M100,75 L160,80 L200,80 L220,100 L200,120 L180,140 L140,130 L100,100 Z",fill:"#141a14",stroke:"#2a3a2a",strokeWidth:.5}),
+    React.createElement("text",{x:155,y:108,textAnchor:"middle",fill:"#8a8070",fontSize:8,fontFamily:"'JetBrains Mono',monospace"},"SAUDI ARABIA"),
+    React.createElement("path",{d:"M220,100 L260,95 L270,110 L250,125 L230,120 Z",fill:"#141820",stroke:"#5a9ece60",strokeWidth:1}),
+    React.createElement("text",{x:245,y:112,textAnchor:"middle",fill:"#5a9ece",fontSize:9,fontWeight:"bold",fontFamily:"'JetBrains Mono',monospace"},"UAE"),
+    React.createElement("path",{d:"M140,130 L180,140 L170,180 L130,190 L110,160 Z",fill:"#181410",stroke:"#2a2520",strokeWidth:.5}),
+    React.createElement("text",{x:145,y:165,textAnchor:"middle",fill:"#8a8070",fontSize:8,fontFamily:"'JetBrains Mono',monospace"},"YEMEN"),
+    React.createElement("text",{x:290,y:90,textAnchor:"middle",fill:hc,fontSize:7,fontWeight:600,fontFamily:"'JetBrains Mono',monospace"},"HORMUZ"),
+    React.createElement("text",{x:290,y:99,textAnchor:"middle",fill:hc,fontSize:6,fontFamily:"'JetBrains Mono',monospace"},state.hormuzDisruption>.5?"BLOCKED":state.hormuzDisruption>.1?"CONTESTED":"OPEN")
+  );
+}
+
+function App(){
+  const[state,setState]=useState(INIT);
+  const[turnData,setTurnData]=useState(null);
+  const[prev,setPrev]=useState({});
+  const[choiceMade,setChoiceMade]=useState(null);
+  const[showRx,setShowRx]=useState(false);
+  const[loading,setLoading]=useState(false);
+  const[loadMsg,setLoadMsg]=useState("");
+  const[error,setError]=useState(null);
+  const[endData,setEndData]=useState(null);
+  const[keyInput,setKeyInput]=useState("");
+  const ref=useRef(null);
+
+  useEffect(()=>{if(ref.current)ref.current.scrollIntoView({behavior:"smooth"})},[state.phase,showRx,turnData,loading]);
+
+  const msgs=["Intercepting diplomatic cables...","Analyzing satellite imagery...","Monitoring oil futures...","Scanning Truth Social...","Briefing NSC...","Assessing threat vectors...","Decrypting IRGC comms...","Checking Hormuz lanes..."];
+  const lm=()=>msgs[Math.floor(Math.random()*msgs.length)];
+
+  const submitKey=()=>{
+    if(keyInput.trim().startsWith("AIza")||keyInput.trim().length>20){
+      API_KEY=keyInput.trim();
+      setState(s=>({...s,phase:"intro"}));
+    }
+  };
+
+  const startGame=async()=>{
+    setLoading(true);setLoadMsg(lm());setError(null);
+    const data=await genTurn({...INIT,turn:0,phase:"briefing"});
+    if(data&&data.headline){
+      setTurnData(data);
+      setState(s=>({...s,phase:"briefing",tickerItems:data.tickerItems||[],events:data.events||[]}));
+    }else{
+      setError(""+e.message);
+    }
+    setLoading(false);
+  };
+
+  const makeChoice=async(choice)=>{
+    setLoading(true);setLoadMsg(lm());setError(null);
+    setPrev({saudiRelation:state.saudiRelation,usRelation:state.usRelation,iranThreat:state.iranThreat,opecCohesion:state.opecCohesion,publicApproval:state.publicApproval,investorConf:state.investorConf,chinaRelation:state.chinaRelation,indiaRelation:state.indiaRelation,yemenInfluence:state.yemenInfluence,gccUnity:state.gccUnity,militaryReadiness:state.militaryReadiness});
+    const eff=choice.effects||{};
+    const ns={...state};
+    ["price","uaeProduction","hormuzDisruption","saudiRelation","usRelation","iranThreat","opecCohesion","publicApproval","investorConf","chinaRelation","indiaRelation","yemenInfluence","gccUnity","militaryReadiness"].forEach(k=>{
+      const mx=k==="price"?200:k==="uaeProduction"?5:k==="hormuzDisruption"?1:100;
+      const mn=k==="price"?30:k==="uaeProduction"?1:0;
+      ns[k]=clamp((ns[k]||0)+(eff[k]||0),mn,mx);
+    });
+    if(choice.label&&choice.label.toLowerCase().includes("leave opec"))ns.uaeInOpec=false;
+    if(choice.label&&choice.label.toLowerCase().includes("fujairah")){ns.fujairahStarted=true;ns.fujairahProgress=clamp(ns.fujairahProgress+30,0,100);}
+    if(ns.fujairahStarted)ns.fujairahProgress=clamp(ns.fujairahProgress+15,0,100);
+    if(ns.turn>=1)ns.warActive=true;
+    if(ns.turn>=9)ns.kazExit=true;
+    ns.history=[...state.history,{month:getMonth(state.turn),choice:choice.label}];
+
+    const reactions=await genReactions(ns,choice.label,choice.desc);
+    if(reactions&&Array.isArray(reactions)){
+      setChoiceMade(choice);setState({...ns,phase:"reactions",reactions});setShowRx(false);
+      setTimeout(()=>setShowRx(true),300);
+    }else{setError(""+e.message);setState(ns);}
+    setLoading(false);
+  };
+
+  const nextTurn=async()=>{
+    setChoiceMade(null);setShowRx(false);setError(null);
+    if(state.turn+1>=MAX_TURNS){
+      setLoading(true);setLoadMsg("Writing the history books...");
+      const ending=await genEnding(state);
+      setEndData(ending);setState(s=>({...s,phase:"end"}));setLoading(false);
+    }else{
+      setLoading(true);setLoadMsg(lm());
+      const next={...state,turn:state.turn+1};
+      const data=await genTurn(next);
+      if(data&&data.headline){setTurnData(data);setState({...next,phase:"briefing",tickerItems:data.tickerItems||[],events:data.events||[]});}
+      else{setError(""+e.message);}
+      setLoading(false);
+    }
+  };
+
+  const pc=state.price>110?"#e85d3a":state.price>85?"#ca8a3a":"#4aad6a";
+  const rev=state.uaeProduction*clamp(state.price,30,200)*(1-state.hormuzDisruption*0.5)*365/1000;
+
+  const h=React.createElement;
+
+  // ── KEY SCREEN ──
+  if(state.phase==="key"){
+    return h("div",{id:"app"},
+      h("div",{style:{position:"fixed",inset:0,background:"#0c0a08",display:"flex",alignItems:"center",justifyContent:"center",padding:20}},
+        h("div",{style:{background:"#12100d",border:"1px solid #2a2520",borderRadius:16,padding:32,maxWidth:480,width:"100%",animation:"slideUp .5s ease"}},
+          h("div",{style:{fontSize:8,fontFamily:"'JetBrains Mono',monospace",color:"#c9a84c",letterSpacing:3,marginBottom:8}},"SECURE ACCESS"),
+          h("h3",{style:{fontFamily:"'Playfair Display',serif",fontSize:22,marginBottom:12,color:"#e8d5b5"}},"API Key Required"),
+          h("p",{style:{fontSize:12,color:"#8a7f70",lineHeight:1.7,marginBottom:16}},"This simulation uses Gemini to dynamically generate every scenario, reaction, and consequence. Enter your Google AI API key to begin. Your key is stored only in memory and never sent anywhere except the Google AI API."),
+          h("input",{type:"password",placeholder:"AIzaSy...",value:keyInput,onChange:e=>setKeyInput(e.target.value),onKeyDown:e=>{if(e.key==="Enter")submitKey()},style:{width:"100%",padding:"12px 14px",background:"#0c0a08",border:"1px solid #2a2520",borderRadius:8,color:"#e0d5c5",fontFamily:"'JetBrains Mono',monospace",fontSize:12,outline:"none",marginBottom:12}}),
+          h("button",{onClick:submitKey,style:{width:"100%",padding:12,background:keyInput.length>10?"#c9a84c":"#2a2520",color:keyInput.length>10?"#0c0a08":"#5a5040",border:"none",borderRadius:8,fontFamily:"'JetBrains Mono',monospace",fontSize:12,fontWeight:600,cursor:keyInput.length>10?"pointer":"default",letterSpacing:1}},"Connect & Begin"),
+          h("p",{style:{fontSize:10,color:"#5a5040",marginTop:10,lineHeight:1.5}},"Get a key at aistudio.google.com. Uses gemini-2.0-flash. Very low cost per full playthrough.")
+        )
+      )
+    );
+  }
+
+  // ── HEADER ──
+  const header=h("div",{style:{padding:"16px 20px 12px",borderBottom:"1px solid #1a1810",background:"linear-gradient(180deg,#12100d,#0c0a08)",position:"sticky",top:0,zIndex:50}},
+    h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}},
+      h("div",null,
+        h("div",{style:{fontSize:7,fontFamily:"'JetBrains Mono',monospace",color:"#c9a84c",letterSpacing:3}},"CLASSIFIED — UAE NSC"),
+        h("div",{style:{fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:900}},"THE OPEC CRISIS")
+      ),
+      state.phase!=="intro"&&h("div",{style:{textAlign:"right"}},
+        h("div",{style:{fontSize:9,fontFamily:"'JetBrains Mono',monospace",color:"#6a5f50"}},"TURN "+(state.turn+1)+"/"+MAX_TURNS),
+        h("div",{style:{fontSize:11,fontFamily:"'JetBrains Mono',monospace",color:"#c9a84c"}},getMonth(state.turn))
+      )
+    ),
+    state.phase!=="intro"&&state.phase!=="end"&&h("div",{style:{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:5,marginTop:10}},
+      [{l:"OIL",v:"$"+fmt(state.price,0),c:pc},{l:"BPD",v:fmt(state.uaeProduction)+"M",c:"#5a9ece"},{l:"HORMUZ",v:state.hormuzDisruption>.5?"CLOSED":state.hormuzDisruption>.1?"RISK":"OPEN",c:state.hormuzDisruption>.5?"#e85d3a":state.hormuzDisruption>.1?"#ca8a3a":"#4aad6a"},{l:"OPEC",v:state.uaeInOpec?"IN":"OUT",c:state.uaeInOpec?"#ca8a3a":"#5a9ece"},{l:"REV",v:"$"+fmt(rev,0)+"B",c:"#4aad6a"}].map((s,i)=>
+        h("div",{key:i,style:{background:"#12100d",borderRadius:6,padding:"5px 6px",textAlign:"center",border:"1px solid #1a1810"}},
+          h("div",{style:{fontSize:6,fontFamily:"'JetBrains Mono',monospace",color:"#5a5040",letterSpacing:1}},s.l),
+          h("div",{style:{fontSize:12,fontFamily:"'JetBrains Mono',monospace",fontWeight:600,color:s.c}},s.v)
+        )
+      )
+    )
+  );
+
+  // ── TICKER ──
+  const ticker=state.phase==="briefing"&&state.tickerItems&&state.tickerItems.length>0&&h("div",{style:{overflow:"hidden",height:24,background:"#0a0908",borderBottom:"1px solid #1a1810",position:"relative"}},
+    h("div",{style:{display:"flex",gap:40,position:"absolute",whiteSpace:"nowrap",animation:"tickerScroll 35s linear infinite"}},
+      [...state.tickerItems,...state.tickerItems,...state.tickerItems].map((t,i)=>
+        h("div",{key:i,style:{fontSize:10,fontFamily:"'JetBrains Mono',monospace",color:t.color||"#ca8a3a",display:"flex",alignItems:"center",gap:6,height:24}},
+          h("div",{style:{width:5,height:5,borderRadius:"50%",background:t.color||"#ca8a3a"}}),t.text
+        )
+      )
+    )
+  );
+
+  // ── LOADING ──
+  const loadUI=loading&&h("div",{style:{textAlign:"center",padding:"40px 20px",animation:"fadeIn .3s ease"}},
+    h("div",{style:{display:"flex",justifyContent:"center",gap:6,marginBottom:14}},
+      [0,1,2].map(i=>h("div",{key:i,style:{width:8,height:8,borderRadius:"50%",background:"#c9a84c",animation:"dotPulse 1.4s ease infinite "+(i*.2)+"s"}}))
+    ),
+    h("div",{style:{fontSize:11,fontFamily:"'JetBrains Mono',monospace",color:"#6a5f50"}},loadMsg)
+  );
+
+  // ── ERROR ──
+  const errUI=error&&!loading&&h("div",{style:{padding:20,textAlign:"center",animation:"fadeIn .3s ease"}},
+    h("div",{style:{fontSize:12,color:"#d45a5a",marginBottom:14,fontFamily:"'JetBrains Mono',monospace"}},error),
+    h("button",{onClick:()=>setError(null),style:{background:"none",border:"1px solid #d45a5a",color:"#d45a5a",padding:"10px 24px",borderRadius:8,fontFamily:"'JetBrains Mono',monospace",fontSize:11,cursor:"pointer"}},"Dismiss")
+  );
+
+  // ── INTRO ──
+  const introUI=state.phase==="intro"&&!loading&&!error&&h("div",{style:{textAlign:"center",padding:"40px 16px",animation:"fadeIn 1.2s ease"}},
+    h("div",{style:{fontSize:52,marginBottom:18}},"🇦🇪"),
+    h("h1",{style:{fontFamily:"'Playfair Display',serif",fontSize:32,fontWeight:900,marginBottom:10,lineHeight:1.15}},"The OPEC Crisis"),
+    h("p",{style:{fontSize:13,color:"#8a7f70",lineHeight:1.75,maxWidth:520,margin:"0 auto"}},
+      "It's January 2026. You are ",h("strong",{style:{color:"#e0d5c5"}},"Sheikh Mohammed bin Zayed Al Nahyan"),", President of the UAE. War is coming. OPEC is fracturing. Every decision ripples across oil markets, military alliances, proxy wars, and the future of the Gulf."
+    ),
+    h("p",{style:{fontSize:11,color:"#5a5040",marginTop:6,marginBottom:30}},"AI-generated scenarios · Unpredictable consequences · Full-spectrum geopolitics"),
+    h("button",{onClick:startGame,style:{background:"none",border:"2px solid #c9a84c",color:"#c9a84c",padding:"14px 44px",borderRadius:8,fontSize:13,fontFamily:"'JetBrains Mono',monospace",cursor:"pointer",letterSpacing:3,textTransform:"uppercase",animation:"glow 2.5s ease infinite"}},"Begin Simulation")
+  );
+
+  // ── BRIEFING ──
+  const briefUI=state.phase==="briefing"&&!loading&&!error&&turnData&&h("div",{style:{animation:"slideUp .6s ease"}},
+    (state.events||[]).map((ev,i)=>h("div",{key:i,style:{fontSize:10,fontFamily:"'JetBrains Mono',monospace",padding:"8px 12px",background:"#14120d",borderRadius:6,marginBottom:8,borderLeft:"3px solid "+(ev.type==="bad"?"#d45a5a":ev.type==="good"?"#4aad6a":"#ca8a3a"),color:ev.type==="bad"?"#d45a5a":ev.type==="good"?"#4aad6a":"#ca8a3a",animation:"slideUp .4s ease "+i*.1+"s both"}},ev.text)),
+    h("div",{style:{background:"#0d0e10",border:"1px solid #1a2030",borderRadius:14,padding:16,marginBottom:14}},
+      h("div",{style:{fontSize:7.5,fontFamily:"'JetBrains Mono',monospace",color:"#5a8aaa",letterSpacing:3,marginBottom:8}},"▎THEATER OF OPERATIONS"),
+      h(GulfMap,{state})
+    ),
+    h("div",{style:{background:"linear-gradient(135deg,#1a1510,#14110d)",border:"1px solid #2a2010",borderRadius:14,padding:20,marginBottom:14}},
+      h("div",{style:{fontSize:7.5,fontFamily:"'JetBrains Mono',monospace",color:"#c9a84c",letterSpacing:3,marginBottom:8}},"▎SITUATION BRIEFING"),
+      h("h2",{style:{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:900,marginBottom:10,lineHeight:1.2,color:"#e8d5b5"}},turnData.headline),
+      (turnData.briefing||"").split("\n").filter(p=>p.trim()).map((p,i)=>h("p",{key:i,style:{fontSize:13,color:"#a09585",lineHeight:1.8,marginBottom:6}},p))
+    ),
+    h("div",{style:{background:"#0e1210",border:"1px solid #1a2a20",borderRadius:14,padding:20,marginBottom:14}},
+      h("div",{style:{fontSize:7.5,fontFamily:"'JetBrains Mono',monospace",color:"#4a8a5a",letterSpacing:3,marginBottom:8}},"🔒 INTEL — EYES ONLY"),
+      (turnData.intel||"").split("\n").filter(p=>p.trim()).map((p,i)=>h("p",{key:i,style:{fontSize:12,color:"#7a9a7a",lineHeight:1.75,fontStyle:"italic",marginBottom:4}},p))
+    ),
+    h("div",{style:{background:"#10120e",border:"1px solid #1a2a1a",borderRadius:14,padding:20,marginBottom:14}},
+      h("div",{style:{fontSize:7.5,fontFamily:"'JetBrains Mono',monospace",color:"#5a8aaa",letterSpacing:3,marginBottom:8}},"STATUS DASHBOARD"),
+      h("div",{style:{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:12}},
+        [{l:"OIL PRICE",v:"$"+fmt(state.price,0),c:pc,s:"per barrel"},{l:"PRODUCTION",v:fmt(state.uaeProduction)+"M",c:"#5a9ece",s:"cap: "+state.uaeCapacity+"M"},{l:"EST. REVENUE",v:"$"+fmt(rev,0)+"B",c:"#4aad6a",s:"annualized"}].map((r,i)=>
+          h("div",{key:i,style:{background:"#0c0a08",borderRadius:8,padding:10,border:"1px solid #1a1810"}},
+            h("div",{style:{fontSize:7,color:"#5a5040",fontFamily:"'JetBrains Mono',monospace",letterSpacing:1,marginBottom:2}},r.l),
+            h("div",{style:{fontSize:16,fontWeight:700,fontFamily:"'JetBrains Mono',monospace",color:r.c}},r.v),
+            h("div",{style:{fontSize:8,color:"#4a4030",fontFamily:"'JetBrains Mono',monospace",marginTop:1}},r.s)
+          )
+        )
+      ),
+      h(SBar,{label:"🇸🇦 Saudi Relations",value:state.saudiRelation,prev:prev.saudiRelation,color:"#4aad6a"}),
+      h(SBar,{label:"🇺🇸 US Relations",value:state.usRelation,prev:prev.usRelation,color:"#4488ff"}),
+      h(SBar,{label:"🇮🇷 Iran Threat",value:state.iranThreat,prev:prev.iranThreat,color:"#e44"}),
+      h(SBar,{label:"🛢️ OPEC Cohesion",value:state.opecCohesion,prev:prev.opecCohesion,color:"#ccaa44"}),
+      h(SBar,{label:"👥 Domestic Approval",value:state.publicApproval,prev:prev.publicApproval,color:"#55aadd"}),
+      h(SBar,{label:"💰 Investor Conf.",value:state.investorConf,prev:prev.investorConf,color:"#55aa99"}),
+      h(SBar,{label:"🇨🇳 China Relations",value:state.chinaRelation,prev:prev.chinaRelation,color:"#dd4422"}),
+      h(SBar,{label:"🇮🇳 India Relations",value:state.indiaRelation,prev:prev.indiaRelation,color:"#ff8800"}),
+      h(SBar,{label:"🇾🇪 Yemen Influence",value:state.yemenInfluence,prev:prev.yemenInfluence,color:"#aa8844"}),
+      h(SBar,{label:"🏛️ GCC Unity",value:state.gccUnity,prev:prev.gccUnity,color:"#8888cc"}),
+      h(SBar,{label:"⚔️ Military Ready",value:state.militaryReadiness,prev:prev.militaryReadiness,color:"#cc6644"})
+    ),
+    h("div",{style:{fontSize:7.5,fontFamily:"'JetBrains Mono',monospace",color:"#c9a84c",letterSpacing:3,marginBottom:12}},"▎YOUR DECISION"),
+    (turnData.choices||[]).map((c,i)=>
+      h("button",{key:c.id||i,disabled:loading,onClick:()=>makeChoice(c),style:{display:"block",width:"100%",textAlign:"left",background:"#12100d",border:"1px solid #2a2520",borderRadius:12,padding:"16px 18px",cursor:"pointer",marginBottom:9,animation:"slideUp .5s ease "+i*.1+"s both",transition:"all .25s"},onMouseEnter:e=>{e.currentTarget.style.borderColor="#c9a84c";e.currentTarget.style.transform="translateY(-2px)"},onMouseLeave:e=>{e.currentTarget.style.borderColor="#2a2520";e.currentTarget.style.transform="none"}},
+        h("div",{style:{display:"flex",alignItems:"center",gap:9,marginBottom:5}},h("span",{style:{fontSize:22}},c.icon||"⚡"),h("span",{style:{fontSize:14,fontWeight:700,color:"#e8d5b5",fontFamily:"'Playfair Display',serif"}},c.label)),
+        h("div",{style:{fontSize:11.5,color:"#8a7f70",lineHeight:1.5,paddingLeft:33}},c.desc),
+        c.tags&&h("div",{style:{display:"flex",gap:6,paddingLeft:33,marginTop:7,flexWrap:"wrap"}},c.tags.map((t,j)=>{const tc2=t.type==="red"?"#d45a5a":t.type==="green"?"#4aad6a":t.type==="blue"?"#5a9ece":"#ca8a3a";return h("span",{key:j,style:{fontSize:8,fontFamily:"'JetBrains Mono',monospace",padding:"2px 7px",borderRadius:4,border:"1px solid "+tc2+"30",color:tc2,background:tc2+"10"}},t.text)}))
+      )
+    )
+  );
+
+  // ── REACTIONS ──
+  const rxUI=state.phase==="reactions"&&!loading&&!error&&h("div",{style:{animation:"fadeIn .5s ease"}},
+    choiceMade&&h("div",{style:{background:"#14120f",border:"1px solid #c9a84c30",borderRadius:12,padding:"14px 16px",marginBottom:16,animation:"slideUp .4s ease"}},
+      h("div",{style:{fontSize:7.5,fontFamily:"'JetBrains Mono',monospace",color:"#c9a84c",letterSpacing:3,marginBottom:6}},"DECISION MADE"),
+      h("div",{style:{display:"flex",alignItems:"center",gap:9}},h("span",{style:{fontSize:22}},choiceMade.icon||"⚡"),h("span",{style:{fontSize:15,fontFamily:"'Playfair Display',serif",fontWeight:700}},choiceMade.label))
+    ),
+    h("div",{style:{fontSize:7.5,fontFamily:"'JetBrains Mono',monospace",color:"#d45a5a",letterSpacing:3,marginBottom:12,animation:"slideUp .4s ease .2s both"}},"▎THE WORLD REACTS"),
+    showRx&&(state.reactions||[]).map((r,i)=>h(RxCard,{key:i,r,i})),
+    showRx&&h("button",{onClick:nextTurn,style:{display:"block",width:"100%",marginTop:20,background:"none",border:"1px solid #2a2520",color:"#c9a84c",padding:14,borderRadius:10,fontSize:11,fontFamily:"'JetBrains Mono',monospace",cursor:"pointer",letterSpacing:2,textTransform:"uppercase",animation:"slideUp .5s ease "+((state.reactions||[]).length*.15+.3)+"s both"},onMouseEnter:e=>{e.target.style.borderColor="#c9a84c"},onMouseLeave:e=>{e.target.style.borderColor="#2a2520"}},state.turn+1>=MAX_TURNS?"See Final Summary →":"Continue →")
+  );
+
+  // ── END ──
+  const endUI=state.phase==="end"&&!loading&&h("div",{style:{animation:"fadeIn 1s ease",padding:"16px 0"}},
+    h("div",{style:{textAlign:"center",marginBottom:24}},
+      h("div",{style:{fontSize:7.5,fontFamily:"'JetBrains Mono',monospace",color:"#c9a84c",letterSpacing:3,marginBottom:6}},"SIMULATION COMPLETE"),
+      h("h2",{style:{fontFamily:"'Playfair Display',serif",fontSize:28,fontWeight:900,marginBottom:4}},endData?.legacy_title||"Your Legacy"),
+      h("p",{style:{fontSize:12,color:"#6a5f50"}},endData?.verdict||"December 2026.")
+    ),
+    endData?.narrative&&h("div",{style:{fontSize:13,color:"#b0a090",lineHeight:1.8,marginBottom:16,padding:16,background:"#12100d",borderRadius:12,border:"1px solid #1a1810",fontStyle:"italic"}},endData.narrative),
+    h("div",{style:{background:"#12100d",borderRadius:14,padding:20,border:"1px solid #1a1810",marginBottom:16}},
+      h("div",{style:{fontSize:7.5,fontFamily:"'JetBrains Mono',monospace",color:"#c9a84c",letterSpacing:3,marginBottom:12}},"FINAL STATE"),
+      h(SBar,{label:"🇸🇦 Saudi",value:state.saudiRelation,color:"#4aad6a"}),
+      h(SBar,{label:"🇺🇸 US",value:state.usRelation,color:"#4488ff"}),
+      h(SBar,{label:"🇮🇷 Iran Threat",value:state.iranThreat,color:"#e44"}),
+      h(SBar,{label:"🛢️ OPEC",value:state.opecCohesion,color:"#ccaa44"}),
+      h(SBar,{label:"👥 Approval",value:state.publicApproval,color:"#55aadd"}),
+      h(SBar,{label:"💰 Investors",value:state.investorConf,color:"#55aa99"})
+    ),
+    h("div",{style:{background:"#12100d",borderRadius:14,padding:20,border:"1px solid #1a1810",marginBottom:16}},
+      h("div",{style:{fontSize:7.5,fontFamily:"'JetBrains Mono',monospace",color:"#c9a84c",letterSpacing:3,marginBottom:12}},"DECISION HISTORY"),
+      state.history.map((hh,i)=>h("div",{key:i,style:{display:"flex",gap:8,marginBottom:7,alignItems:"flex-start"}},
+        h("div",{style:{width:5,height:5,borderRadius:"50%",marginTop:5,background:"#c9a84c",flexShrink:0}}),
+        h("div",null,h("span",{style:{fontSize:9,color:"#c9a84c",fontFamily:"'JetBrains Mono',monospace"}},hh.month),h("span",{style:{fontSize:11,color:"#a09585",marginLeft:6}},hh.choice))
+      ))
+    ),
+    h("button",{onClick:()=>location.reload(),style:{display:"block",width:"100%",background:"none",border:"2px solid #c9a84c",color:"#c9a84c",padding:14,borderRadius:10,fontSize:12,fontFamily:"'JetBrains Mono',monospace",cursor:"pointer",letterSpacing:2,textTransform:"uppercase"}},"Play Again")
+  );
+
+  return h("div",{id:"app"},header,ticker,h("div",{style:{padding:20}},loadUI,errUI,introUI,briefUI,rxUI,endUI,h("div",{ref})));
+}
+
+ReactDOM.createRoot(document.getElementById("app")).render(React.createElement(App));
+</script></body></html>
