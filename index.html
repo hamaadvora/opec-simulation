@@ -305,7 +305,7 @@ function App(){
 
   // ── TICKER ──
   const ticker=state.phase==="briefing"&&state.tickerItems&&state.tickerItems.length>0&&h("div",{style:{overflow:"hidden",height:24,background:"#0a0908",borderBottom:"1px solid #1a1810",position:"relative"}},
-    h("div",{style:{display:"flex",gap:40,position:"absolute",whiteSpace:"nowrap",animation:"tickerScroll 35s linear infinite"}},
+    h("div",{style:{display:"flex",gap:40,position:"absolute",whiteSpace:"nowrap",animation:"tickerScroll 90s linear infinite"}},
       [...state.tickerItems,...state.tickerItems,...state.tickerItems].map((t,i)=>
         h("div",{key:i,style:{fontSize:10,fontFamily:"'JetBrains Mono',monospace",color:t.color||"#ca8a3a",display:"flex",alignItems:"center",gap:6,height:24}},
           h("div",{style:{width:5,height:5,borderRadius:"50%",background:t.color||"#ca8a3a"}}),t.text
